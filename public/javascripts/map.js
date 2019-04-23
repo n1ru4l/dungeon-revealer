@@ -65,13 +65,34 @@ define(['settings', 'jquery', 'brush'], function (settings, jquery, brush) {
                 fowContext = fowCanvas.getContext('2d');
                 cursorContext = cursorCanvas.getContext('2d');
                 copyCanvas(mapImageContext, createImageCanvas(mapImage));
-                fowBrush = brush(fowContext, opts);
-                fowContext.strokeStyle = fowBrush.getCurrent();
-                fogMap();
-                createRender();
-                setUpDrawingEvents();
-                setupCursorTracking();
-                callback();
+
+                function afterSetup (didRestore) {
+                    fowBrush = brush(fowContext, opts);
+                    fowContext.strokeStyle = fowBrush.getCurrent();
+                    if (!didRestore) {
+                        fogMap();
+                    }
+                    createRender();
+                    setUpDrawingEvents();
+                    setupCursorTracking();
+                    callback();
+                }
+
+                var latest = localStorage.getItem("latest");
+                if (latest) {
+                    var img = new Image();
+                    img.src = latest;
+                    img.addEventListener("load", function () {
+                        fowContext.drawImage(img, 0, 0);
+                        fowContext.stroke();
+                        afterSetup(true);
+                    });
+                    img.addEventListener("error", function () {
+                        afterSetup(false);
+                    }) 
+                    return
+                } 
+                afterSetup(false);
             };
             mapImage.crossOrigin = 'Anonymous'; // to prevent tainted canvas errors
             mapImage.src = imgUrl;
@@ -204,15 +225,15 @@ define(['settings', 'jquery', 'brush'], function (settings, jquery, brush) {
             context.fillStyle = brush.getPattern(brushType);
             context.fillRect(0, 0, width, height);
             context.restore();
+            localStorage.removeItem("latest");
         }
 
         function fogMap() {
             resetMap(fowContext, 'fog', fowBrush);
         }
 
-        function clearMap(context) {
+        function clearMap() {
             resetMap(fowContext, 'clear', fowBrush);
-            //resetMap(context, 'clear');
         }
 
         function resize(displayWidth, displayHeight) {
@@ -242,6 +263,7 @@ define(['settings', 'jquery', 'brush'], function (settings, jquery, brush) {
             mapImageCanvas.remove();
             fowCanvas.remove();
             cursorCanvas.remove();
+            localStorage.removeItem("latest");
         }
 
         function getMapDisplayRatio() {
@@ -628,8 +650,7 @@ define(['settings', 'jquery', 'brush'], function (settings, jquery, brush) {
             });
 
             $('#btn-shroud-all').click(function () {
-                fogMap(fowContext);
-                //createRender();
+                fogMap();
             });
 
             $('#btn-clear-all').click(function () {
@@ -700,13 +721,11 @@ define(['settings', 'jquery', 'brush'], function (settings, jquery, brush) {
         }
 
         function stopDrawing() {
-            if (isDrawing) {
-                //createRender();
-            }
             isTouch = false;
             isDrawing = false;
             points = []
-            points.length = 0;
+            var latest = fowCanvas.toDataURL();
+            localStorage.setItem("latest", latest);
         }
 
         //todo: move this functionality elsewher
