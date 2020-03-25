@@ -16,6 +16,10 @@ import { TokenRenderer } from "./object-layer/token-renderer";
 import { SplashScreen } from "./splash-screen";
 import { AuthenticationScreen } from "./authentication-screen";
 import { buildApiUrl } from "./public-url";
+import { DiceOverlay } from "./dice-overlay";
+import { useStaticRef } from "./hooks/use-static-ref";
+import { createEventBus } from "./event-bus";
+import { DiceRollerChat } from "./dice-roller-chat";
 
 const ToolbarContainer = styled.div`
   position: absolute;
@@ -509,6 +513,7 @@ export const PlayerArea = () => {
   const [pcPassword, setPcPassword] = usePcPassword("");
 
   const [mode, setMode] = useState("LOADING");
+  const eventBus = useStaticRef(createEventBus);
 
   const localFetch = useCallback(
     (input, init = {}) => {
@@ -556,7 +561,13 @@ export const PlayerArea = () => {
     );
   }
   if (mode === "READY") {
-    return <PlayerMap fetch={localFetch} pcPassword={pcPassword} />;
+    return (
+      <>
+        <PlayerMap fetch={localFetch} pcPassword={pcPassword} />
+        <DiceOverlay eventBus={eventBus} />
+        <DiceRollerChat eventBus={eventBus} />
+      </>
+    );
   }
 
   throw new Error("Invalid mode.");
