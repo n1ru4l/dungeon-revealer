@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import * as React from "react";
 import styled from "@emotion/styled/macro";
 import { Input } from "./input";
 import * as Button from "./button";
@@ -29,9 +29,14 @@ export const AuthenticationScreen = ({
   onAuthenticate,
   requiredRole = "DM",
   fetch,
+}: {
+  onAuthenticate: (password: string) => void;
+  requiredRole: "DM" | "PC";
+  fetch: typeof window.fetch;
 }) => {
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
+  const [password, setPassword] = React.useState("");
+  const [error, setError] = React.useState<string | null>(null);
+
   return (
     <BackgroundImageContainer>
       <BrandLogoText />
@@ -71,7 +76,10 @@ export const AuthenticationScreen = ({
       </form>
 
       {error ? (
-        <Modal>
+        <Modal
+          onClickOutside={() => setError(null)}
+          onPressEscape={() => setError(null)}
+        >
           <Modal.Dialog size={ModalDialogSize.SMALL}>
             <Modal.Header>
               <h3>Invalid Password</h3>
@@ -82,7 +90,7 @@ export const AuthenticationScreen = ({
                 <ButtonColumn
                   onClick={() => {
                     setError(null);
-                    setPassword(null);
+                    setPassword("");
                   }}
                 >
                   <Button.Primary>Try again.</Button.Primary>
